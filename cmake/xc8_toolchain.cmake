@@ -57,9 +57,11 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_LIST_DIR}/cflags-override.cma
 #
 
 # include, libディレクトリにXC8のそれを追加 (xc.h等にアクセスするため)
-include_directories(${XC8_ROOT}/pic/include)
-include_directories(${XC8_ROOT}/pic/include/c99)
-include_directories(${XC8_ROOT}/pic/include/proc)
+include_directories(
+    ${XC8_ROOT}/pic/include
+    ${XC8_ROOT}/pic/include/c99
+    ${XC8_ROOT}/pic/include/proc
+)
 link_directories(${XC8_ROOT}/pic/lib)
 
 # defineを追加 (コンパイル時に自動で追加されるが、VSCodeの補完を効かせるために必要)
