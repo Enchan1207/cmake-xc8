@@ -79,9 +79,9 @@ else()
 endif()
 
 # コンパイルフラグを構成
-set(PIC_MCU "" CACHE STRING "Target microcontroller identifier (required)")
-set(PIC_FCPU 0 CACHE STRING "Target microcontroller clock frequency (required)")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_XTAL_FREQ=${PIC_FCPU} -std=c99 -mcpu=${PIC_MCU} ${OPTIMIZATION_FLAGS}")
+set(PIC_MCU "${PIC_MCU}" CACHE STRING "Target microcontroller identifier (required)")
+set(PIC_FCPU "${PIC_FCPU}" CACHE STRING "Target microcontroller clock frequency (required)")
+set(CMAKE_C_FLAGS "-D_XTAL_FREQ=${PIC_FCPU} -std=c99 -mcpu=${PIC_MCU} ${OPTIMIZATION_FLAGS}")
 
 #
 # プログラマの設定
@@ -101,15 +101,23 @@ macro(target_configure_for_pic target_name)
         set(${target_name}_IS_EXECUTABLE FALSE)
     endif()
 
-    if(${target_name}_IS_EXECUTABLE)
-        if(IPE_TOOL)
-            # フラッシュターゲットを追加
-            add_custom_target(flash-${target_name}
-                COMMAND java -jar ${IPE_ROOT} -P${PIC_MCU} -T${IPE_TOOL} -I -M -F"${target_name}.hex"
-                DEPENDS ${target_name}
-            )
-        else()
-            message(WARNING "IPE_TOOL not specified. IF you want to add flash target, please specify it.")
-        endif()
+    if(NOT ${target_name}_IS_EXECUTABLE)
+        return()
     endif()
+
+    # ツール名が指定されているか調べる
+    if(NOT IPE_TOOL)
+        message(WARNING "IPE_TOOL not specified. IF you want to add flash target, please specify it.")
+        return()
+    endif()
+
+    # 出力バイナリの名前を探す
+    set(${target_name}_HEX_PATH "${CMAKE_CURRENT_BINARY_DIR}/${target_name}.hex")
+
+    # フラッシュターゲットを追加
+    add_custom_target(flash-${target_name}
+        COMMAND java -jar ${IPE_ROOT}/ipecmd.jar -P${PIC_MCU} -T${IPE_TOOL} -I -M -OL -F"${${target_name}_HEX_PATH}"
+        USES_TERMINAL
+        DEPENDS ${target_name}
+    )
 endmacro()
