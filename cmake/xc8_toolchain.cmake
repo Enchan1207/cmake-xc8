@@ -102,12 +102,6 @@ macro(target_configure_for_pic target_name)
     endif()
 
     if(${target_name}_IS_EXECUTABLE)
-        # ビルド後、バイナリをダンプしてメモリ使用量を表示
-        add_custom_command(TARGET ${target_name} POST_BUILD
-            COMMAND ${CMAKE_OBJDUMP} -P mem-usage ${target_name}
-        )
-
-        # 
         if(IPE_TOOL)
             # フラッシュターゲットを追加
             add_custom_target(flash-${target_name}
