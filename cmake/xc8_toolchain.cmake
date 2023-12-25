@@ -23,7 +23,7 @@ endif()
 # IPEを探す
 if(NOT DEFINED IPE_FOUND OR $IPE_FOUND EQUAL 0)
     message(NOTICE "Looking for MPLAB IPE...")
-    include(${CMAKE_CURRENT_LIST_DIR}/find_ipe.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/find_mplabplatform.cmake)
 endif()
 
 if($IPE_FOUND EQUAL 0)
