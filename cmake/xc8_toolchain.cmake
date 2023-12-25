@@ -20,14 +20,14 @@ if($XC8_FOUND EQUAL 0)
     message(FATAL_ERROR "Failed to identify XC8 compiler!")
 endif()
 
-# IPEを探す
-if(NOT DEFINED IPE_FOUND OR $IPE_FOUND EQUAL 0)
-    message(NOTICE "Looking for MPLAB IPE...")
-    include(${CMAKE_CURRENT_LIST_DIR}/find_ipe.cmake)
+# MPLAB Platformを探す
+if(NOT DEFINED MPLAB_PLATFORM_FOUND OR $MPLAB_PLATFORM_FOUND EQUAL 0)
+    message(NOTICE "Looking for MPLAB Platform...")
+    include(${CMAKE_CURRENT_LIST_DIR}/find_mplabplatform.cmake)
 endif()
 
-if($IPE_FOUND EQUAL 0)
-    message(FATAL_ERROR "Failed to identify MPLAB IPE!")
+if($MPLAB_PLATFORM_FOUND EQUAL 0)
+    message(FATAL_ERROR "Failed to identify MPLAB Platform!")
 endif()
 
 #
@@ -86,38 +86,34 @@ set(CMAKE_C_FLAGS "-D_XTAL_FREQ=${PIC_FCPU} -std=c99 -mcpu=${PIC_MCU} ${OPTIMIZA
 #
 # プログラマの設定
 #
-set(IPE_TOOL "" CACHE STRING "The name of tool used for flashing (optional)")
+set(IPE_TOOL "${IPE_TOOL}" CACHE STRING "The name of tool used for flashing (optional)")
+set(MDB_TOOL "${MDB_TOOL}" CACHE STRING "The name of tool used for debugging (optional)")
 
 #
-# カスタムターゲットの追加
+# 書込み+デバッグターゲットの追加
 #
-macro(target_configure_for_pic target_name)
-    # ターゲットが実行可能かを調べる
-    get_target_property(target_type ${target_name} TYPE)
 
-    if(target_type STREQUAL "EXECUTABLE")
-        set(${target_name}_IS_EXECUTABLE TRUE)
-    else()
-        set(${target_name}_IS_EXECUTABLE FALSE)
+# 書き込みターゲットを追加するマクロを定義
+include(${CMAKE_CURRENT_LIST_DIR}/configure_flash_macro.cmake)
+
+# MDB_TOOLが指定されていれば、単純にデバッグセッションを開くターゲットを追加する
+if(NOT WIN32 AND MDB_TOOL)
+    # デバッガのブートストラップファイルを作成
+    set(DEBUG_BOOTSTRAP_PATH "${CMAKE_CURRENT_BINARY_DIR}/debugger_bootstrap.txt")
+    if(NOT EXISTS ${DEBUG_BOOTSTRAP_PATH})
+        file(
+            WRITE ${DEBUG_BOOTSTRAP_PATH} 
+            "device PIC${PIC_MCU}\n"
+            "hwtool ${MDB_TOOL}\n"
+            "reset MCLR\n"
+        )
     endif()
 
-    if(NOT ${target_name}_IS_EXECUTABLE)
-        return()
+    # デバッグターゲットを追加
+    if(NOT TARGET debug)
+        add_custom_target(debug
+            COMMAND ${MDB_ROOT}/mdb.sh ${DEBUG_BOOTSTRAP_PATH}
+            USES_TERMINAL
+        )
     endif()
-
-    # ツール名が指定されているか調べる
-    if(NOT IPE_TOOL)
-        message(WARNING "IPE_TOOL not specified. IF you want to add flash target, please specify it.")
-        return()
-    endif()
-
-    # 出力バイナリの名前を探す
-    set(${target_name}_HEX_PATH "${CMAKE_CURRENT_BINARY_DIR}/${target_name}.hex")
-
-    # フラッシュターゲットを追加
-    add_custom_target(flash-${target_name}
-        COMMAND java -jar ${IPE_ROOT}/ipecmd.jar -P${PIC_MCU} -T${IPE_TOOL} -I -M -OL -F"${${target_name}_HEX_PATH}"
-        USES_TERMINAL
-        DEPENDS ${target_name}
-    )
-endmacro()
+endif()
