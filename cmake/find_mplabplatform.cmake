@@ -1,11 +1,11 @@
 #
-# MPLAB IPEを探す
+# IPEとデバッガを探す
 #
-# 発見できた場合は #IPE_FOUND に1が、$IPE_ROOT にIPEへのルートパスが代入されます。
+# 発見できた場合は #MPLAB_PLATFORM_FOUND に1が、$IPE_ROOT にIPEへのルートパスが、$MDB_ROOTにmdbへのルートパスが代入されます。
 #
 cmake_minimum_required(VERSION 3.10)
 
-set(IPE_FOUND 0)
+set(MPLAB_PLATFORM_FOUND 0)
 set(MPLABX_INSTALL_DIR "" CACHE PATH "Path to root of IPE (optional)")
 
 # OSごとにインストール先が異なるので、指定がなければ自動で決定する
@@ -33,6 +33,7 @@ file(GLOB IPE_VARIANTS ${MPLABX_INSTALL_DIR}/v*)
 list(SORT IPE_VARIANTS ORDER DESCENDING)
 list(GET IPE_VARIANTS 0 MPLABX_ROOT)
 set(IPE_ROOT ${MPLABX_ROOT}/mplab_platform/mplab_ipe)
+set(MDB_ROOT ${MPLABX_ROOT}/mplab_platform/bin)
 
 if(NOT EXISTS ${IPE_ROOT})
     message(WARNING "No any available IPE variants found.")
@@ -40,6 +41,13 @@ if(NOT EXISTS ${IPE_ROOT})
     return()
 endif()
 
-message(NOTICE "${IPE_ROOT}")
+if(NOT EXISTS ${MDB_ROOT})
+    message(WARNING "No any available mdb variants found.")
+    message(WARNING "The toolchain expects it to be placed at ${MDB_ROOT}")
+    return()
+endif()
 
-set(IPE_FOUND 1)
+message(NOTICE "MPLAB IPE: ${IPE_ROOT}")
+message(NOTICE "MPLAB Plaform binaries: ${MDB_ROOT}")
+
+set(MPLAB_PLATFORM_FOUND 1)
