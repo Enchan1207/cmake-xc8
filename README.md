@@ -27,7 +27,7 @@ include(FetchContent)
 FetchContent_Declare(
     xc8_toolchain
     GIT_REPOSITORY https://github.com/Enchan1207/cmake-xc8
-    GIT_TAG v0.1.0
+    GIT_TAG v1
 )
 FetchContent_Populate(xc8_toolchain)
 set(CMAKE_TOOLCHAIN_FILE "${xc8_toolchain_SOURCE_DIR}/cmake/xc8_toolchain.cmake")
