@@ -71,17 +71,38 @@ add_compile_definitions(
     "_${PIC_MCU}"
 )
 
-# 最適化フラグの構成 リリースビルドでは -Os を使いたかったが、XC8では使えない(ライセンス?)
+# 最適化
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(OPTIMIZATION_FLAGS "-O2")
 else()
-    set(OPTIMIZATION_FLAGS "-Og")
+    set(OPTIMIZATION_FLAGS "-O0")
+    add_compile_definitions("__DEBUG=1")
+endif()
+
+# MCUと動作周波数
+set(PIC_MCU "${PIC_MCU}" CACHE STRING "Target microcontroller identifier (required)")
+set(PIC_FCPU "${PIC_FCPU}" CACHE STRING "Target microcontroller clock frequency (required)")
+
+# DFP (Device Family Pack)の構成
+# TODO: PIC_MCUからDFPを探す
+set(DFP_FLAGS "-mdfp=${MPLABX_ROOT}/packs/Microchip/PIC12-16F1xxx_DFP/1.6.241/xc8")
+
+# MPLAB X IDEがコンパイル時に使用しているフラグをそのまま流用
+set(MISC_FLAGS 
+    "-Wa,-a -Wl,--data-init -fasmfile -fno-short-double -fno-short-float \
+    -gdwarf-3 -ginhx32 -maddrqual=ignore -mno-default-config-bits -mno-download \
+    -mno-keep-startup -mno-osccal -mno-resetbits -mno-save-resetbits -mno-stackcall \
+    -mstack=compiled:auto:auto -msummary=-psect,-class,+mem,-hex,-file -mwarn=-3 \
+    -xassembler-with-cpp"
+)
+
+# デバッガがわかっているならここで追加する
+if(MDB_TOOL)
+    set(MISC_FLAGS "${MISC_FLAGS} -mdebugger=${MDB_TOOL}")
 endif()
 
 # コンパイルフラグを構成
-set(PIC_MCU "${PIC_MCU}" CACHE STRING "Target microcontroller identifier (required)")
-set(PIC_FCPU "${PIC_FCPU}" CACHE STRING "Target microcontroller clock frequency (required)")
-set(CMAKE_C_FLAGS "-D_XTAL_FREQ=${PIC_FCPU} -std=c99 -mcpu=${PIC_MCU} ${OPTIMIZATION_FLAGS}")
+set(CMAKE_C_FLAGS "-D_XTAL_FREQ=${PIC_FCPU} -std=c99 -mcpu=${PIC_MCU} ${OPTIMIZATION_FLAGS} ${MISC_FLAGS}")
 
 #
 # プログラマの設定

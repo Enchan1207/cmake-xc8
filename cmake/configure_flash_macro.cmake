@@ -16,16 +16,27 @@ macro(target_configure_for_pic target_name)
     if(NOT ${target_name}_IS_EXECUTABLE)
         return()
     endif()
+    
+    # ターゲットが出力または生成するファイルのパスを取得
+    set(${target_name}_OUTPUT_ROOT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}")
+    set(${target_name}_HEX_PATH "${${target_name}_OUTPUT_ROOT}.hex")
+    set(${target_name}_MAP_PATH "${${target_name}_OUTPUT_ROOT}.map")
+    set(${target_name}_ELF_PATH "${${target_name}_OUTPUT_ROOT}.elf")
+    set(${target_name}_MEMSUMMARY_PATH "${${target_name}_OUTPUT_ROOT}-memoryfile.xml")
+
+    # リンクオプションを追加する
+    target_link_options(${target_name} PRIVATE
+        -mram=default,-320-32f
+        -Wl,--defsym=__MPLAB_BUILD=1
+        -Wl,--memorysummary,${${target_name}_MEMSUMMARY_PATH}
+        -Wl,-Map=${${target_name}_MAP_PATH}
+    )
 
     # 書き込みツール名が指定されていなければ戻る
     if(NOT IPE_TOOL)
         message(WARNING "IPE_TOOL not specified. Creating flash target will be skipped.")
         return()
-    endif()
-
-    # 出力バイナリの名前を探す
-    set(${target_name}_HEX_PATH "${CMAKE_CURRENT_BINARY_DIR}/${target_name}.hex")
-    set(${target_name}_ELF_PATH "${CMAKE_CURRENT_BINARY_DIR}/${target_name}.elf")
+    endif()    
 
     # フラッシュターゲットを追加
     add_custom_target(flash-${target_name}
